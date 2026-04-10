@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { MAIN_TABS_HREF } from "../constants/routes";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
 import { PlaidLinkButton } from "../components/PlaidLinkButton";
@@ -125,7 +126,9 @@ export default function OnboardingScreen() {
       setShowDoneOverlay(true);
       await new Promise((r) => setTimeout(r, 1500));
       setShowDoneOverlay(false);
-      router.replace("/(tabs)");
+      requestAnimationFrame(() => {
+        router.replace(MAIN_TABS_HREF);
+      });
     } finally {
       setSaving(false);
     }

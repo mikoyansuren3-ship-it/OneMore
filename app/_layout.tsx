@@ -14,6 +14,8 @@ import { DMSerifDisplay_400Regular } from "@expo-google-fonts/dm-serif-display";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { colors } from "../constants/colors";
 import { isSupabaseConfigured } from "../services/supabase";
+import { useRootNavigationReady } from "../hooks/useRootNavigationReady";
+import { MAIN_TABS_HREF } from "../constants/routes";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,10 +29,12 @@ function AuthGate() {
   } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const navReady = useRootNavigationReady();
   const segmentPath = segments.join("/");
   const lastReplaceRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!navReady) return;
     if (authLoading) return;
     const supabaseOk = isSupabaseConfigured();
     if (isAuthenticated && supabaseOk && profileLoading) return;
@@ -45,7 +49,7 @@ function AuthGate() {
         : isAuthenticated && supabaseOk && needsOnboarding && root !== "onboarding"
           ? "/onboarding"
         : isAuthenticated && onboardingDone && root === "auth"
-          ? "/(tabs)"
+          ? MAIN_TABS_HREF
           : null;
 
     if (target === null) {
@@ -55,8 +59,12 @@ function AuthGate() {
 
     if (lastReplaceRef.current === target) return;
     lastReplaceRef.current = target;
-    router.replace(target);
+    const id = requestAnimationFrame(() => {
+      router.replace(target);
+    });
+    return () => cancelAnimationFrame(id);
   }, [
+    navReady,
     authLoading,
     isAuthenticated,
     profileLoading,
@@ -98,7 +106,6 @@ function RootLayoutContent() {
   return (
     <>
       <StatusBar style="dark" />
-      <AuthGate />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="auth" />
@@ -109,7 +116,7 @@ function RootLayoutContent() {
             gestureEnabled: false,
           }}
         />
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="connect-bank"
           options={{
@@ -126,6 +133,7 @@ function RootLayoutContent() {
           options={{ presentation: "card", animation: "slide_from_right" }}
         />
       </Stack>
+      <AuthGate />
     </>
   );
 }
